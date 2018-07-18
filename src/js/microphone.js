@@ -12,104 +12,85 @@ const axios = require('axios');
 
 const AiKy = "AIzaSyCqb9QdYoScP2xdLkD_kJkfS9wWAknvCNI";
 
-//var MediaStreamRecorder = require('msr');
+var MediaStreamRecorder = require('msr');
 
 export default function() {
 
 
-  let buttonStart = document.createElement("button");
-  buttonStart.appendChild( document.createTextNode("Start") );
-  buttonStart.addEventListener("click", function(){
-    start();
+
+  let buttonWav = document.createElement("button");
+  buttonWav.appendChild( document.createTextNode("Wav") );
+  buttonWav.addEventListener("click", function(){
+    startWav();
   });
-  document.body.appendChild(buttonStart);
+  document.body.appendChild(buttonWav);
 
-
-  // let buttonStop = document.createElement("button");
-  // buttonStop.appendChild( document.createTextNode("Stop") );
-  // buttonStop.addEventListener("click", function(){
-  //   //console.log('click');
-  // });
-  // document.body.appendChild(buttonStop);
-
-
+  let buttonNative = document.createElement("button");
+  buttonNative.appendChild( document.createTextNode("Native") );
+  buttonNative.addEventListener("click", function(){
+    startNative();
+  });
+  document.body.appendChild(buttonNative);
 
 
 
-  let start = function() {
-    navigator.mediaDevices.getUserMedia({  audio: {sampleRate:48000, mimeType : 'audio/ogg', channelCount: 1, volume: 1.0 }  })
-      .then(stream => {
-
-//console.log(stream);
-//console.log(stream.getTracks());
-//console.log(stream.getAudioTracks());
-
-
-
-//console.log('--------------------');
-        stream.getTracks().forEach(function(track) {
-//console.log(track.getSettings());
-        })
+  var blobResolver = function(audioBlob) {
+    var reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = function() {
+      var base64data = reader.result;
+      ////console.log(base64data);
+      var testAudio = `<p>captured ::<p><audio controls><source src="${base64data}"></audio>`
+      document.body.insertAdjacentHTML("beforeend", testAudio);
+      stt(base64data);
+    }
+  }
 
 
 
-        const mediaRecorder = new MediaRecorder(stream);
-
-//console.log(mediaRecorder);
-
-        mediaRecorder.start();
-
-
-        const audioChunks = [];
-        mediaRecorder.addEventListener("dataavailable", event => {
-          audioChunks.push(event.data);
-        });
-
-
-
-        mediaRecorder.addEventListener("stop", () => {
-          const audioBlob = new Blob(audioChunks, { 'type' : 'audio/ogg; codecs=opus' });
-          //const audioUrl = URL.createObjectURL(audioBlob);
-//console.log(audioBlob);
-          // //console.log(audioUrl);
-          var reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = function() {
-//console.log(reader);
-              var base64data = reader.result;
-              ////console.log(base64data);
-              var testAudio = `<audio controls><source src="${base64data}"></audio>`
-              document.body.insertAdjacentHTML("beforeend", testAudio);
-              let requestBody = {
-                "audio": {
-                  "content": reader.result.split("base64,")[1]
-                },
-                "config": {
-                  "encoding":"OGG_OPUS",
-                  "languageCode":"en-US",
-                  "sampleRateHertz": 48000
-                }
-              }
-              axios({
-                method: 'post',
-                url: 'https://speech.googleapis.com/v1/speech:recognize?key=' + AiKy,
-                data: requestBody
-              })
-              .then(function(response) {
-
-
-                let spokenTxt = response.data.results[0].alternatives[0].transcript;
-//console.log(response.data.results[0].alternatives);
-//console.log(spokenTxt);
-
-                translate(spokenTxt);
-              });
+  var stt = function(audioBase64) {
+    audioBase64 = audioBase64.split("base64,");
+    let audioBase64Type = audioBase64[0];
+    let audioBase64Body = audioBase64[1];
+    audioBase64 = false;
+    //console.log(audioBase64Type);
+    let requestBody = {};
+    switch (audioBase64Type) {
+      case "data:audio/wav;" :
+        requestBody = {
+          "audio": {
+            "content": audioBase64Body
+          },
+          "config": {
+            "languageCode":"en"
           }
-        });
-        setTimeout(() => {
-          mediaRecorder.stop();
-        }, 3000);
-      });
+        }
+        break;
+      case "data:audio/ogg; codecs=opus;" :
+        requestBody = {
+          "audio": {
+            "content": audioBase64Body
+          },
+          "config": {
+            "encoding":"OGG_OPUS",
+            "languageCode":"en-US",
+            "sampleRateHertz": 48000
+          }
+        }
+        break;
+      default:
+        console.log('unknown type');
+    }
+    axios({
+      method: 'post',
+      url: 'https://speech.googleapis.com/v1/speech:recognize?key=' + AiKy,
+      data: requestBody
+    })
+    .then(function(response) {
+      let transcript = response.data.results[0].alternatives[0].transcript;
+      console.log(transcript);
+      translate(transcript);
+    });
   }
 
 
@@ -127,14 +108,13 @@ export default function() {
     })
     .then(function(response) {
       let translatedText = response.data.data.translations[0].translatedText
-//console.log(translatedText);
       tts(translatedText);
     });
   }
 
 
-  var tts = function(txt) {
 
+  var tts = function(txt) {
     let requestBody = {
       "input": {
         "text":txt
@@ -146,7 +126,6 @@ export default function() {
         "audioEncoding":"OGG_OPUS"
       }
     }
-
     axios({
       method: 'post',
       url: 'https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=' + AiKy,
@@ -154,14 +133,81 @@ export default function() {
     })
     .then(function(response) {
       let translatedVoice = "data:audio/ogg; codecs=opus;base64," + response.data.audioContent;
-//console.log(translatedVoice);
-
-
-
       let testAudio = `<audio controls><source src="${translatedVoice}"></audio>`
       document.body.insertAdjacentHTML("beforeend", testAudio);
     });
+  }
 
+
+
+
+  var startWav = function() {
+    var mediaConstraints = {
+      audio: true,
+      channelCount: 1,
+      sampleRate:48000
+    };
+    navigator.getUserMedia(mediaConstraints, onMediaSuccess, function(err){console.log('getUserMedia error ::', err)});
+    function onMediaSuccess(stream) {
+      var mediaRecorder = new MediaStreamRecorder(stream);
+      mediaRecorder.mimeType = 'audio/wav';
+      //mediaRecorder.mimeType = 'audio/pcm';
+      //mediaRecorder.mimeType = 'audio/ogg';
+      mediaRecorder.audioChannels = 1;
+      let blobs = [];
+      mediaRecorder.ondataavailable = function (blob) {
+        blobs.push(blob);
+      };
+      mediaRecorder.onstop  = function () {
+        console.log("onstop");
+        let theBlob = new Blob(blobs, { 'type' : 'audio/wav' });
+        console.log("blobs", blobs);
+        console.log("theBlob", theBlob);
+        blobResolver(theBlob);
+      };
+      mediaRecorder.start();
+      setTimeout(() => {
+        mediaRecorder.stop();
+      }, 3000);
+    }
+    function onMediaError(e) {
+      console.error('media error', e);
+    }
+  }
+
+
+
+  let startNative = function() {
+    // mimeType : 'audio/ogg',
+    navigator.mediaDevices.getUserMedia({  audio: {
+      autoGainControl: false,
+      channelCount: 1,
+      //echoCancellation: true,
+      //latency: 0.0,
+      //noiseSuppression: true,
+      sampleSize: 200,
+      sampleRate:48000,
+      volume: 1.0
+    }})
+    .then(stream => {
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      const audioChunks = [];
+      mediaRecorder.addEventListener("dataavailable", event => {
+        audioChunks.push(event.data);
+      });
+      // https://air.ghost.io/recording-to-an-audio-file-using-html5-and-js/
+      mediaRecorder.addEventListener("stop", () => {
+        // 'type' : 'audio/ogg; codecs=opus'
+        const audioBlob = new Blob(audioChunks, {'type' : 'audio/ogg; codecs=opus'});
+        console.log("chunks", audioChunks);
+        console.log("theBlob", audioBlob);
+        blobResolver(audioBlob);
+      });
+      setTimeout(() => {
+        mediaRecorder.stop();
+      }, 3000);
+    });
   }
 
 }
