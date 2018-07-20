@@ -8,11 +8,14 @@ module.exports = {
   mode: 'development',
   devtool: 'inline-source-map',
   devServer: {
-    contentBase: path.join(__dirname, 'dist'),
+    //hot: true,
+    //contentBase: path.join(__dirname, 'dist'),
+    publicPath: '/dist/'
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Development'
+      title: 'Development',
+      template: path.join(__dirname, 'index.html')
     })
   ],
   output: {

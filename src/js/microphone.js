@@ -16,21 +16,21 @@ var MediaStreamRecorder = require('msr');
 
 export default function() {
 
-
+  var appDiv = document.getElementById('app-speech');
 
   let buttonWav = document.createElement("button");
   buttonWav.appendChild( document.createTextNode("Wav") );
   buttonWav.addEventListener("click", function(){
     startWav();
   });
-  document.body.appendChild(buttonWav);
+  appDiv.appendChild(buttonWav);
 
   let buttonNative = document.createElement("button");
   buttonNative.appendChild( document.createTextNode("Native") );
   buttonNative.addEventListener("click", function(){
     startNative();
   });
-  document.body.appendChild(buttonNative);
+  appDiv.appendChild(buttonNative);
 
 
 

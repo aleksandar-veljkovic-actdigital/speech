@@ -5,7 +5,8 @@
   "license": "MIT",
   "dependencies": {},
   "scripts": {
-    "dev": "webpack-dev-server --open"
+    "dev": "webpack-dev-server --open",
+    "build": "webpack"
   },
   "devDependencies": {
     "@google-cloud/speech": "^2.0.0",
