@@ -30,7 +30,7 @@ export default function() {
   buttonNative.addEventListener("click", function(){
     startNative();
   });
-  appDiv.appendChild(buttonNative);
+  //appDiv.appendChild(buttonNative);
 
 
 
@@ -41,7 +41,7 @@ export default function() {
       var base64data = reader.result;
       ////console.log(base64data);
       var testAudio = `<p>captured ::<p><audio controls><source src="${base64data}"></audio>`
-      document.body.insertAdjacentHTML("beforeend", testAudio);
+      //appDiv.insertAdjacentHTML("beforeend", testAudio);
       stt(base64data);
     }
   }
@@ -134,7 +134,7 @@ export default function() {
     .then(function(response) {
       let translatedVoice = "data:audio/ogg; codecs=opus;base64," + response.data.audioContent;
       let testAudio = `<audio controls><source src="${translatedVoice}"></audio>`
-      document.body.insertAdjacentHTML("beforeend", testAudio);
+      appDiv.insertAdjacentHTML("beforeend", testAudio);
     });
   }
 
