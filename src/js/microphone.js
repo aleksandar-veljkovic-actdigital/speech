@@ -168,7 +168,7 @@ export default function() {
       mediaRecorder.start();
       setTimeout(() => {
         mediaRecorder.stop();
-      }, 3000);
+      }, 10000);
     }
     function onMediaError(e) {
       console.error('media error', e);
